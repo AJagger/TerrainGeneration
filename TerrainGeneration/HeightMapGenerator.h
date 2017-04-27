@@ -15,41 +15,36 @@ public:
 	//World Data
 	static const int HEIGHTMAP_SIZE = 1025; //std 129 257 //1025
 	static const int HEIGHTMAP_SIZE_OFFSET = HEIGHTMAP_SIZE - 1; //1024
+	static const int NOISE_1D_SIZE = HEIGHTMAP_SIZE * 2 + 1;
 	static const int WATER_LEVEL = -20;
 
 	void GenerateHeightMapUsingCombination();
 	void GenerateHeightMapUsingSeeding();
 
 	float** GetHeightMapAsArray();
-	//float(*GetHeightMapAsArrayNew())[HEIGHTMAP_SIZE] { return heightmap; };
 	float GetHeightAt(int xPos, int yPos);
 
 private:
 	//Stores which method is currently being generated
 	bool METHOD_IS_COMBINATION = true;
 
-	//heightmap stores the most recently generated map.
+	//heightmap stores the final map.
 	float finalHeightmap[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE] = {};
-	//float(*heightmap)[HEIGHTMAP_SIZE] = new float[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE];
-	//float **heightmap;
 
 	//Heightmaps used for the Combination method
 	float plainHeightmap[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE] = {};
 	float elevatedHeightmap[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE] = {};
 	float mergeMap[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE] = {};
-	//float(*plainHeightmap)[HEIGHTMAP_SIZE] = new float[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE];
-	//float(*elevatedHeightmap)[HEIGHTMAP_SIZE] = new float[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE];
-	//float(*mergeMap)[HEIGHTMAP_SIZE] = new float[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE];
-	//float **plainHeightmap;
-	//float **elevatedHeightmap;
-	//float **mergeMap;
+
+	//Objects used for Seeding method
+	float noise1D[NOISE_1D_SIZE] = {};
 
 	//Used to return heightmap
 	float **returnHeightMap;
 
 	//Chunk Data
 	static const int MAX_INITIAL_RAND = 120; //std 60 30 15 --- 60 //120
-	static const int MAX_ITERATIVE_RAND = 240; //std 20 60 20 --- 120 //240
+	static const int MAX_ITERATIVE_RAND = 200; //std 20 60 20 --- 120 //240
 	static const int TERRAIN_TYPE_PLAIN = 0;
 	static const int TERRAIN_TYPE_ELEVATED = 1;
 	static const int TERRAIN_MERGE_MAP = 0;
@@ -65,11 +60,9 @@ private:
 	void DiamondSquare(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE], int startingX, int startingY, int iteration, int terrainType);
 
 	//Core functions for Combination Method
-	//void TransferToPlainHeightmap();
-	//void TransferToElevatedHeightmap();
-	//void TransferToMergeMap();
 	void MergeMaps();
 
 	//Core functions for Seeding Method
+	void Generate1DNoise(float(&heightmap)[NOISE_1D_SIZE], int startingX, int iteration);
 };
 

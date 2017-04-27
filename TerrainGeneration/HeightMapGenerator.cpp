@@ -30,10 +30,7 @@ HeightMapGenerator::HeightMapGenerator(SurroundingHeightmaps sHm, int seed)
 
 HeightMapGenerator::~HeightMapGenerator()
 {
-	//delete elevatedHeightmap;
-	//delete plainHeightmap;
-	//delete mergeMap;
-	//delete finalHeightmap;
+
 }
 
 void HeightMapGenerator::GenerateHeightMapUsingCombination()
@@ -42,18 +39,15 @@ void HeightMapGenerator::GenerateHeightMapUsingCombination()
 	InitialiseValuesFromExistingChunks(plainHeightmap);
 	InitialiseCorners(plainHeightmap,TERRAIN_TYPE_PLAIN);
 	DiamondSquare(plainHeightmap, 0, 0, 1, TERRAIN_TYPE_PLAIN);
-	//TransferToPlainHeightmap();
 
 	//Create the elevated heightmap (More vertical)
 	InitialiseValuesFromExistingChunks(elevatedHeightmap);
 	InitialiseCorners(elevatedHeightmap, TERRAIN_TYPE_ELEVATED);
 	DiamondSquare(elevatedHeightmap, 0, 0, 1, TERRAIN_TYPE_ELEVATED);
-	//TransferToElevatedHeightmap();
 
 	//Create the merge perlin noise
 	InitialiseCorners(mergeMap, TERRAIN_MERGE_MAP);
 	DiamondSquare(mergeMap, 0, 0, 1, TERRAIN_MERGE_MAP);
-	//TransferToMergeMap();
 
 	//Combine the plain and elevated heightmaps using the values contained in the merge map
 	MergeMaps();
@@ -72,7 +66,6 @@ float ** HeightMapGenerator::GetHeightMapAsArray()
 	}
 
 	return returnHeightMap;
-
 }
 
 float HeightMapGenerator::GetHeightAt(int xPos, int yPos)
@@ -163,7 +156,7 @@ void HeightMapGenerator::InitialiseValuesFromExistingChunks(float(&heightmap)[HE
 
 void HeightMapGenerator::DiamondSquare(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE], int startingX, int startingY, int iteration, int terrainType)
 {
-	int length = (HEIGHTMAP_SIZE - 1) / pow(2, iteration - 1);
+	int length = (HEIGHTMAP_SIZE_OFFSET) / pow(2, iteration - 1);
 	int dampening;
 	switch (terrainType)
 	{
@@ -204,7 +197,10 @@ void HeightMapGenerator::DiamondSquare(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTM
 
 		diamondValue += (GenerateRandomVariance(terrainType) / dampening);
 
-		heightmap[midPoint.y][midPoint.x] = static_cast <float> (diamondValue);
+		if (heightmap[midPoint.y][top.x] == 0)
+		{
+			heightmap[midPoint.y][midPoint.x] = static_cast <float> (diamondValue);
+		}
 
 		//Square step	//Divide into top/bottom etc so work does not need to be done if value already exists
 		float topValue =
@@ -229,18 +225,18 @@ void HeightMapGenerator::DiamondSquare(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTM
 		bottomValue += (GenerateRandomVariance(terrainType) / dampening);
 		leftValue += (GenerateRandomVariance(terrainType) / dampening);
 
-		if (heightmap[top.y][top.x] != 0) {
-			topValue = (topValue + heightmap[top.y][top.x]) / 2;
-		}
-		if (heightmap[right.y][right.x] != 0) {
-			rightValue = (rightValue + heightmap[right.y][right.x]) / 2;
-		}
-		if (heightmap[bottom.y][bottom.x] != 0) {
-			bottomValue = (bottomValue + heightmap[bottom.y][bottom.x]) / 2;
-		}
-		if (heightmap[left.y][left.x] != 0) {
-			leftValue = (leftValue + heightmap[left.y][left.x]) / 2;
-		}
+		//if (heightmap[top.y][top.x] != 0) {
+		//	topValue = (topValue + heightmap[top.y][top.x]) / 2;
+		//}
+		//if (heightmap[right.y][right.x] != 0) {
+		//	rightValue = (rightValue + heightmap[right.y][right.x]) / 2;
+		//}
+		//if (heightmap[bottom.y][bottom.x] != 0) {
+		//	bottomValue = (bottomValue + heightmap[bottom.y][bottom.x]) / 2;
+		//}
+		//if (heightmap[left.y][left.x] != 0) {
+		//	leftValue = (leftValue + heightmap[left.y][left.x]) / 2;
+		//}
 
 		if (heightmap[top.y][top.x] == 0)
 		{
@@ -267,36 +263,6 @@ void HeightMapGenerator::DiamondSquare(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTM
 	}
 }
 
-//void HeightMapGenerator::TransferToPlainHeightmap()
-//{
-//	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
-//		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
-//			plainHeightmap[y][x] = heightmap[y][x];
-//			heightmap[y][x] = 0.0f;
-//		}
-//	}
-//}
-//
-//void HeightMapGenerator::TransferToElevatedHeightmap()
-//{
-//	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
-//		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
-//			elevatedHeightmap[y][x] = heightmap[y][x];
-//			heightmap[y][x] = 0.0f;
-//		}
-//	}
-//}
-//
-//void HeightMapGenerator::TransferToMergeMap()
-//{
-//	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
-//		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
-//			mergeMap[y][x] = heightmap[y][x];
-//			heightmap[y][x] = 0.0f;
-//		}
-//	}
-//}
-
 void HeightMapGenerator::MergeMaps()
 {
 	float scale = MAX_INITIAL_RAND * 0.8f; //0.8f
@@ -322,5 +288,28 @@ void HeightMapGenerator::MergeMaps()
 				finalHeightmap[y][x] = plainHeightmap[y][x];
 			}
 		}
+	}
+}
+
+void HeightMapGenerator::Generate1DNoise(float(&heightmap)[NOISE_1D_SIZE], int startingX, int iteration)
+{
+	int length = (NOISE_1D_SIZE - 1) / pow(2, iteration - 1);
+	int dampening = iteration * iteration;
+
+	if (length < 2) {
+		//Algorithm is complete
+		//cout << "Algorithm complete, iteration " << iteration << "\n";
+	}
+	else
+	{
+		int midPoint = startingX + length / 2;
+		int endingX = startingX + length;
+		float midPointValue = (noise1D[startingX] + noise1D[endingX]) / 2;
+		midPointValue += (GenerateRandomVariance(TERRAIN_TYPE_PLAIN) / dampening);
+		noise1D[midPoint] = midPointValue;
+
+		//Call next iteration
+		Generate1DNoise(heightmap, startingX, iteration + 1);
+		Generate1DNoise(heightmap, midPoint, iteration + 1);
 	}
 }

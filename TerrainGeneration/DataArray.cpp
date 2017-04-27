@@ -22,7 +22,7 @@ template<class T> DataArray<T>::DataArray()
 
 template<class T> DataArray<T>::~DataArray()
 {
-	//delete data;
+	delete[] data;
 	freeList.clear();
 }
 
