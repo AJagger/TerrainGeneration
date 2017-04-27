@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "Renderer/nclgl/Window.h"
 #include "Renderer.h"
+#include "World.h"
 
 
 int main()
@@ -18,9 +19,13 @@ int main()
 		return -1;
 	}
 
-	float scale = 100.0f;
-	float rotation = 0.0f;
-	Vector3 position(0, 0, -1500.0f);
+	float scale = 0.5f;
+	float rotation = 90.0f;
+	Vector3 position(0, -600.0f, -1500.0f);
+
+	World *world = new World();
+	world->GenerateWorldThroughCombination();
+	world->RenderWorld(&renderer);
 
 	while (w.UpdateWindow() && !Window::GetKeyboard()->KeyDown(KEYBOARD_ESCAPE)) {
 		if (Window::GetKeyboard()->KeyDown(KEYBOARD_1))
@@ -67,6 +72,8 @@ int main()
 		renderer.UpdateScene(w.GetTimer()->GetTimedMS());
 		renderer.RenderScene();
 	}
+
+	delete world;
 
 	return 0;
 }

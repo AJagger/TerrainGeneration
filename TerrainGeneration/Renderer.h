@@ -4,6 +4,7 @@
 
 #include "Renderer/nclgl/OGLRenderer.h"
 #include "Renderer/nclgl/Camera.h"
+#include "DataArray.h"
 
 
 class  Renderer : public  OGLRenderer {
@@ -16,37 +17,27 @@ public:
 	virtual void UpdateScene(float msec);
 	void SwitchToPerspective();
 	void SwitchToOrthographic();
-	void PrintMap(float **map);
 
 	void ToggleDepth();
 	void ToggleAlphaBlend();
 	void ToggleBlendMode();
+	void AddToPipeline(Mesh *mesh);
 
 	inline void SetScale(float s) { scale = s; }
 	inline void SetRotation(float r) { rotation = r; }
 	inline void SetPosition(Vector3 p) { position = p; }
 
-	typedef ChunkGenerator::SurroundingHeightmaps SurroundingHeightmaps;
-	static const int CHUNK_ARRAY_COUNT = 4;
-
-	SurroundingHeightmaps GenerateSurroundingHeightmaps(int xChunkValue, int zChunkValue);
-
-	float** chunkHeightmaps[CHUNK_ARRAY_COUNT][CHUNK_ARRAY_COUNT] = {};
+	DataArray<Mesh*> renderPipeline = DataArray<Mesh*>();
 
 protected:
-	Mesh* chunkMeshes[CHUNK_ARRAY_COUNT][CHUNK_ARRAY_COUNT] = {};
-	Mesh* waterLevelMeshes[CHUNK_ARRAY_COUNT][CHUNK_ARRAY_COUNT] = {};
-	Mesh* chunk1;
-	Mesh* chunk2;
 	Camera* camera;
 
 	bool usingDepth;
 	bool usingAlpha;
 	int blendMode;
 
-	float scale;
-	float rotation;
-	Vector3 position;
-	//Vector3 positions[2];
+	float scale = 1;
+	float rotation = 0;
+	Vector3 position = Vector3(0,0,0);
 };
 

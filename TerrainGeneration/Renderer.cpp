@@ -1,25 +1,10 @@
 #include "stdafx.h"
 #include "Renderer.h"
 #include "Renderer/GLEW/include/GL/glew.h"
+#include "DataArray.h"
+#include "DataArray.cpp"
 
 Renderer::Renderer(Window &parent) : OGLRenderer(parent) {
-
-	//Generate chunks. Left->Right = +Z, Bottom->Top = +X
-	for (int cgx = 0; cgx < CHUNK_ARRAY_COUNT; cgx++)
-	{
-		for (int cgz = 0; cgz < CHUNK_ARRAY_COUNT; cgz++)
-		{
-			ChunkGenerator* gen = new ChunkGenerator(GenerateSurroundingHeightmaps(cgx, cgz));
-			gen->GenerateHeightMap();
-			float **tempMap = gen->GetHeightMapAsArray();
-			chunkHeightmaps[cgx][cgz] = tempMap;
-			//delete gen;
-
-			chunkMeshes[cgx][cgz] = Mesh::GenerateChunk(tempMap, cgz, cgx);
-			waterLevelMeshes[cgx][cgz] = Mesh::GenerateWaterChunk(cgz, cgx);
-			//delete tempMap;
-		}
-	}
 
 	camera = new Camera();
 
@@ -35,20 +20,13 @@ Renderer::Renderer(Window &parent) : OGLRenderer(parent) {
 
 	init = true;
 
-	SwitchToOrthographic();
+	SwitchToPerspective();
+	glEnable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
 }
 
 Renderer::~Renderer(void) {
-	delete chunk1;
-	delete chunk2;
 	delete camera;
-	delete chunkMeshes;
-	delete chunkHeightmaps;
-
-	//for (int i = 0; i < CHUNK_ARRAY_COUNT; i++) {
-	//	delete[] chunkHeightmaps[i];
-	//}
-	//delete[] chunkHeightmaps;
 }
 
 void Renderer::SwitchToPerspective() {
@@ -68,51 +46,30 @@ void Renderer::RenderScene() {
 	glUseProgram(currentShader->GetProgram());
 
 	glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgram(), "projMatrix"), 1, false, (float *)& projMatrix);
-
 	glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgram(), "viewMatrix"), 1, false, (float *)& viewMatrix);
 
-	int i = 1;
-	//Render Chunk Meshes
-	Vector3  tempPos = position;
-	tempPos.z += (i*500.0f);
-	tempPos.x -= (i*100.0f);
-	tempPos.y -= (i*100.0f);
-
-	modelMatrix = Matrix4::Translation(tempPos) *
-		Matrix4::Rotation(rotation, Vector3(0, 1, 0)) *
-		Matrix4::Scale(Vector3(scale, scale, scale));
-
-	glUniformMatrix4fv(glGetUniformLocation(
-		currentShader->GetProgram(), "modelMatrix"), 1, false,
-		(float *)& modelMatrix);
-
-	for (int mdx = 0; mdx < CHUNK_ARRAY_COUNT; mdx++)
+	//Cycle through objects in renderPipeline and draw.
+	Mesh *drawData = *renderPipeline.TryToGetFirst();
+	if (drawData != nullptr)
 	{
-		for (int mdz = 0; mdz < CHUNK_ARRAY_COUNT; mdz++)
+		modelMatrix = Matrix4::Translation(position) * Matrix4::Rotation(rotation, Vector3(0, 1, 0)) * Matrix4::Scale(Vector3(scale, scale, scale));
+		glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgram(), "modelMatrix"), 1, false, (float *)& modelMatrix);
+		drawData->Draw();
+
+		while (renderPipeline.IsNext())
 		{
-			waterLevelMeshes[mdx][mdz]->Draw();
-			chunkMeshes[mdx][mdz]->Draw();
+			drawData = *renderPipeline.Next();
+			if (drawData != nullptr)
+			{
+				modelMatrix = Matrix4::Translation(position) * Matrix4::Rotation(rotation, Vector3(0, 1, 0)) * Matrix4::Scale(Vector3(scale, scale, scale));
+				glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgram(), "modelMatrix"), 1, false, (float *)& modelMatrix);
+				drawData->Draw();
+			}
 		}
 	}
 
 	glUseProgram(0);
 	SwapBuffers();
-}
-
-void  Renderer::UpdateScene(float msec) {
-	camera->UpdateCamera(msec);
-	viewMatrix = camera->BuildViewMatrix();
-}
-
-void Renderer::PrintMap(float** map) {
-	for (int y = 0; y < ChunkGenerator::CHUNK_SIZE; y++)
-	{
-		for (int x = 0; x < ChunkGenerator::CHUNK_SIZE; x++)
-		{
-			cout << map[y][x] << ", ";
-		}
-		cout << "\n";
-	}
 }
 
 void Renderer::ToggleDepth()
@@ -140,29 +97,13 @@ void Renderer::ToggleBlendMode()
 
 }
 
-ChunkGenerator::SurroundingHeightmaps Renderer::GenerateSurroundingHeightmaps(int xChunkValue, int zChunkValue)
+void  Renderer::UpdateScene(float msec) {
+	camera->UpdateCamera(msec);
+	viewMatrix = camera->BuildViewMatrix();
+}
+
+void Renderer::AddToPipeline(Mesh * mesh)
 {
-	SurroundingHeightmaps toReturn;
-
-	if (zChunkValue != 0)
-	{
-		toReturn.leftHeightMap = chunkHeightmaps[xChunkValue][zChunkValue - 1];
-	}
-
-	if (xChunkValue != (CHUNK_ARRAY_COUNT - 1))
-	{
-		toReturn.topHeightMap = chunkHeightmaps[xChunkValue + 1][zChunkValue];
-	}
-
-	if (zChunkValue != (CHUNK_ARRAY_COUNT - 1))
-	{
-		toReturn.rightHeightMap = chunkHeightmaps[xChunkValue][zChunkValue + 1];
-	}
-
-	if (xChunkValue != 0)
-	{
-		toReturn.bottomHeightMap = chunkHeightmaps[xChunkValue - 1][zChunkValue];
-	}
-
-	return toReturn;
+	Mesh ** toAdd = renderPipeline.CreateNew();
+	*toAdd = mesh;
 }

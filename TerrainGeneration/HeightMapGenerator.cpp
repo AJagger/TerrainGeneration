@@ -6,7 +6,7 @@
 #include <cmath>
 
 
-HeightMapGenerator::HeightMapGenerator(SurroundingHeightmaps sHm, int seed = NULL)
+HeightMapGenerator::HeightMapGenerator(SurroundingHeightmaps sHm, int seed)
 {
 	//Initialise with generator Seed
 	if (seed == NULL)
@@ -30,26 +30,30 @@ HeightMapGenerator::HeightMapGenerator(SurroundingHeightmaps sHm, int seed = NUL
 
 HeightMapGenerator::~HeightMapGenerator()
 {
+	//delete elevatedHeightmap;
+	//delete plainHeightmap;
+	//delete mergeMap;
+	//delete finalHeightmap;
 }
 
 void HeightMapGenerator::GenerateHeightMapUsingCombination()
 {
 	//Create the basic heightmap (Flat, perlin noise terrain
-	InitialiseValuesFromExistingChunks();
-	InitialiseCorners(TERRAIN_TYPE_PLAIN);
-	DiamondSquare(0, 0, 1, TERRAIN_TYPE_PLAIN);
-	TransferToPlainHeightmap();
+	InitialiseValuesFromExistingChunks(plainHeightmap);
+	InitialiseCorners(plainHeightmap,TERRAIN_TYPE_PLAIN);
+	DiamondSquare(plainHeightmap, 0, 0, 1, TERRAIN_TYPE_PLAIN);
+	//TransferToPlainHeightmap();
 
 	//Create the elevated heightmap (More vertical)
-	InitialiseValuesFromExistingChunks();
-	InitialiseCorners(TERRAIN_TYPE_ELEVATED);
-	DiamondSquare(0, 0, 1, TERRAIN_TYPE_ELEVATED);
-	TransferToElevatedHeightmap();
+	InitialiseValuesFromExistingChunks(elevatedHeightmap);
+	InitialiseCorners(elevatedHeightmap, TERRAIN_TYPE_ELEVATED);
+	DiamondSquare(elevatedHeightmap, 0, 0, 1, TERRAIN_TYPE_ELEVATED);
+	//TransferToElevatedHeightmap();
 
 	//Create the merge perlin noise
-	InitialiseCorners(TERRAIN_MERGE_MAP);
-	DiamondSquare(0, 0, 1, TERRAIN_MERGE_MAP);
-	TransferToMergeMap();
+	InitialiseCorners(mergeMap, TERRAIN_MERGE_MAP);
+	DiamondSquare(mergeMap, 0, 0, 1, TERRAIN_MERGE_MAP);
+	//TransferToMergeMap();
 
 	//Combine the plain and elevated heightmaps using the values contained in the merge map
 	MergeMaps();
@@ -63,16 +67,17 @@ float ** HeightMapGenerator::GetHeightMapAsArray()
 {
 	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
 		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
-			returnHeightMap[y][x] = heightmap[y][x];
+			returnHeightMap[y][x] = finalHeightmap[y][x];
 		}
 	}
 
 	return returnHeightMap;
+
 }
 
 float HeightMapGenerator::GetHeightAt(int xPos, int yPos)
 {
-	return heightmap[yPos][xPos];
+	return finalHeightmap[yPos][xPos];
 }
 
 float HeightMapGenerator::GenerateStartingElevation(int terrainType)
@@ -101,7 +106,7 @@ float HeightMapGenerator::GenerateRandomVariance(int terrainType)
 	}
 }
 
-void HeightMapGenerator::InitialiseCorners(int terrainType)
+void HeightMapGenerator::InitialiseCorners(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE], int terrainType)
 {
 	if (heightmap[0][0] == NULL || heightmap[0][0] == 0)
 	{
@@ -121,7 +126,7 @@ void HeightMapGenerator::InitialiseCorners(int terrainType)
 	}
 }
 
-void HeightMapGenerator::InitialiseValuesFromExistingChunks()
+void HeightMapGenerator::InitialiseValuesFromExistingChunks(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE])
 {
 	if (surroundingHeightMaps.leftHeightMap != NULL)
 	{
@@ -156,7 +161,7 @@ void HeightMapGenerator::InitialiseValuesFromExistingChunks()
 	}
 }
 
-void HeightMapGenerator::DiamondSquare(int startingX, int startingY, int iteration, int terrainType)
+void HeightMapGenerator::DiamondSquare(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE], int startingX, int startingY, int iteration, int terrainType)
 {
 	int length = (HEIGHTMAP_SIZE - 1) / pow(2, iteration - 1);
 	int dampening;
@@ -255,42 +260,42 @@ void HeightMapGenerator::DiamondSquare(int startingX, int startingY, int iterati
 		}
 
 		//Call next iteration of DiamondSquare
-		DiamondSquare(upperLeft.x, upperLeft.y, iteration + 1, terrainType);
-		DiamondSquare(top.x, top.y, iteration + 1, terrainType);
-		DiamondSquare(left.x, left.y, iteration + 1, terrainType);
-		DiamondSquare(midPoint.x, midPoint.y, iteration + 1, terrainType);
+		DiamondSquare(heightmap, upperLeft.x, upperLeft.y, iteration + 1, terrainType);
+		DiamondSquare(heightmap, top.x, top.y, iteration + 1, terrainType);
+		DiamondSquare(heightmap, left.x, left.y, iteration + 1, terrainType);
+		DiamondSquare(heightmap, midPoint.x, midPoint.y, iteration + 1, terrainType);
 	}
 }
 
-void HeightMapGenerator::TransferToPlainHeightmap()
-{
-	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
-		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
-			plainHeightmap[y][x] = heightmap[y][x];
-			heightmap[y][x] = 0.0f;
-		}
-	}
-}
-
-void HeightMapGenerator::TransferToElevatedHeightmap()
-{
-	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
-		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
-			elevatedHeightmap[y][x] = heightmap[y][x];
-			heightmap[y][x] = 0.0f;
-		}
-	}
-}
-
-void HeightMapGenerator::TransferToMergeMap()
-{
-	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
-		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
-			mergeMap[y][x] = heightmap[y][x];
-			heightmap[y][x] = 0.0f;
-		}
-	}
-}
+//void HeightMapGenerator::TransferToPlainHeightmap()
+//{
+//	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+//		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+//			plainHeightmap[y][x] = heightmap[y][x];
+//			heightmap[y][x] = 0.0f;
+//		}
+//	}
+//}
+//
+//void HeightMapGenerator::TransferToElevatedHeightmap()
+//{
+//	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+//		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+//			elevatedHeightmap[y][x] = heightmap[y][x];
+//			heightmap[y][x] = 0.0f;
+//		}
+//	}
+//}
+//
+//void HeightMapGenerator::TransferToMergeMap()
+//{
+//	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+//		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+//			mergeMap[y][x] = heightmap[y][x];
+//			heightmap[y][x] = 0.0f;
+//		}
+//	}
+//}
 
 void HeightMapGenerator::MergeMaps()
 {
@@ -303,18 +308,18 @@ void HeightMapGenerator::MergeMaps()
 			{
 				if (mergeMap[y][x] > MAX_INITIAL_RAND)
 				{
-					heightmap[y][x] = elevatedHeightmap[y][x];
+					finalHeightmap[y][x] = elevatedHeightmap[y][x];
 				}
 				else
 				{
 					float percentage = (mergeMap[y][x] - thresholdValue) / scale;
 					//float percentage = (mergeMap[y][x] - )
-					heightmap[y][x] = ((elevatedHeightmap[y][x] * percentage) + (plainHeightmap[y][x] * (1 - percentage)));
+					finalHeightmap[y][x] = ((elevatedHeightmap[y][x] * percentage) + (plainHeightmap[y][x] * (1 - percentage)));
 				}
 			}
 			else
 			{
-				heightmap[y][x] = plainHeightmap[y][x];
+				finalHeightmap[y][x] = plainHeightmap[y][x];
 			}
 		}
 	}
