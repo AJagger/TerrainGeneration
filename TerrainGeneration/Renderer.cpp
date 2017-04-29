@@ -23,6 +23,7 @@ Renderer::Renderer(Window &parent) : OGLRenderer(parent) {
 	SwitchToPerspective();
 	glEnable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //Enable outlines
 }
 
 Renderer::~Renderer(void) {

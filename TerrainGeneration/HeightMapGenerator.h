@@ -1,4 +1,7 @@
 #pragma once
+#include <cmath>
+#include "SimplexNoise.h"
+
 class HeightMapGenerator
 {
 public:
@@ -19,7 +22,8 @@ public:
 	static const int WATER_LEVEL = -20;
 
 	void GenerateHeightMapUsingCombination();
-	void GenerateHeightMapUsingSeeding();
+	void GenerateHeightmapSimplex(int frequency, int magnitude);
+	void GenerateHeightmapSingleDS();
 
 	float** GetHeightMapAsArray();
 	float GetHeightAt(int xPos, int yPos);
@@ -64,5 +68,8 @@ private:
 
 	//Core functions for Seeding Method
 	void Generate1DNoise(float(&heightmap)[NOISE_1D_SIZE], int startingX, int iteration);
+
+	//Core Functions for Simplex Noise
+	SimplexNoise *simplexGen = new SimplexNoise();
 };
 

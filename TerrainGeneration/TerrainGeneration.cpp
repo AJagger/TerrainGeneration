@@ -24,8 +24,12 @@ int main()
 	Vector3 position(0, -600.0f, -1500.0f);
 
 	World *world = new World();
-	world->GenerateWorldThroughCombination();
-	world->RenderWorld(&renderer);
+	//world->GenerateWorldThroughCombination();
+	//world->RenderWorld(&renderer);
+
+	world->GenerateSingleHeightmapSimplex();
+	//world->GenerateSingleHeightmapDS();
+	world->RenderSingleMesh(&renderer);
 
 	while (w.UpdateWindow() && !Window::GetKeyboard()->KeyDown(KEYBOARD_ESCAPE)) {
 		if (Window::GetKeyboard()->KeyDown(KEYBOARD_1))

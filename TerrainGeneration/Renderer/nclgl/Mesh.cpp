@@ -251,3 +251,29 @@ Vector4 Mesh::DetermineColour(float elevation)
 
 	return Vector4(r, g, b, 1.0f);
 }
+
+//Vector4 Mesh::DetermineColour(float elevation)
+//{
+//	float r, g, b = 0.0f;
+//
+//	if (elevation < 0)
+//	{
+//		r = 1.0f;
+//		g = 1.0f;
+//		b = 1.0f;
+//	}
+//	else if (elevation <= 1)
+//	{
+//		r = 1 - elevation;
+//		g = 1 - elevation;
+//		b = 1 - elevation;
+//	}
+//	else
+//	{
+//		r = 0.0f;
+//		g = 0.0f;
+//		b = 0.0f;
+//	}
+//
+//	return Vector4(r, g, b, 1.0f);
+//}

@@ -54,6 +54,22 @@ void World::GenerateWorldThroughCombination()
 	}
 }
 
+void World::GenerateSingleHeightmapSimplex()
+{
+	HeightMapGenerator *gen = new HeightMapGenerator(GenerateSurroundingHeightmaps(0, 0));
+	gen->GenerateHeightmapSimplex(512, 300);
+	chunkHeightmaps[0][0] = gen->GetHeightMapAsArray();
+	delete gen;
+}
+
+void World::GenerateSingleHeightmapDS()
+{
+	HeightMapGenerator *gen = new HeightMapGenerator(GenerateSurroundingHeightmaps(0, 0));
+	gen->GenerateHeightmapSingleDS();
+	chunkHeightmaps[0][0] = gen->GetHeightMapAsArray();
+	delete gen;
+}
+
 void World::RenderWorld(Renderer *renderer)
 {
 	GenerateMeshesFromWorld();
@@ -79,4 +95,9 @@ void World::GenerateMeshesFromWorld()
 			waterLevelMeshes[cgx][cgz] = Mesh::GenerateWaterChunk(cgz, cgx);
 		}
 	}
+}
+
+void World::RenderSingleMesh(Renderer *renderer)
+{
+	renderer->AddToPipeline(Mesh::GenerateChunk(chunkHeightmaps[0][0], 0, 0));
 }

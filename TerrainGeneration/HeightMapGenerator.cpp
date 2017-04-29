@@ -4,6 +4,7 @@
 #include <ctime>
 #include "Renderer/nclgl/HMCoordinate.h"
 #include <cmath>
+#include "SimplexNoise.h"
 
 
 HeightMapGenerator::HeightMapGenerator(SurroundingHeightmaps sHm, int seed)
@@ -30,6 +31,7 @@ HeightMapGenerator::HeightMapGenerator(SurroundingHeightmaps sHm, int seed)
 
 HeightMapGenerator::~HeightMapGenerator()
 {
+	delete simplexGen;
 
 }
 
@@ -53,8 +55,22 @@ void HeightMapGenerator::GenerateHeightMapUsingCombination()
 	MergeMaps();
 }
 
-void HeightMapGenerator::GenerateHeightMapUsingSeeding()
+void HeightMapGenerator::GenerateHeightmapSimplex(int frequency, int magnitude)
 {
+	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+			double xf = (double)x / frequency;
+			double yf = (double)y / frequency;
+			finalHeightmap[y][x] = (float)(simplexGen->simplex(xf, yf, 0)*magnitude - (magnitude/2));
+		}
+	}
+}
+
+void HeightMapGenerator::GenerateHeightmapSingleDS()
+{
+	InitialiseValuesFromExistingChunks(finalHeightmap);
+	InitialiseCorners(finalHeightmap, TERRAIN_TYPE_PLAIN);
+	DiamondSquare(finalHeightmap, 0, 0, 1, TERRAIN_TYPE_PLAIN);
 }
 
 float ** HeightMapGenerator::GetHeightMapAsArray()

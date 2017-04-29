@@ -12,7 +12,10 @@ public:
 
 	static const int CHUNK_ARRAY_COUNT = 4;
 	void GenerateWorldThroughCombination();
+	void GenerateSingleHeightmapSimplex();
+	void GenerateSingleHeightmapDS();
 	void RenderWorld(Renderer *renderer);
+	void RenderSingleMesh(Renderer *renderer);
 
 protected:
 	void GenerateMeshesFromWorld();
