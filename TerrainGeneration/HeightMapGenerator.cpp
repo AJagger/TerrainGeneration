@@ -35,11 +35,46 @@ HeightMapGenerator::~HeightMapGenerator()
 
 }
 
-void HeightMapGenerator::GenerateHeightMapUsingCombination()
+void HeightMapGenerator::GenerateCompleteRandom()
 {
+	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+			finalHeightmap[y][x] = (float)(rand() % 1000) / 1000;
+		}
+	}
+}
+
+void HeightMapGenerator::GenerateBlankMap()
+{
+	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+			finalHeightmap[y][x] = 0;
+		}
+	}
+}
+
+void HeightMapGenerator::GenerateHeightMapUsingCombination(int chunkX, int chunkY)
+{
+	////Create the basic heightmap (Flat, perlin noise terrain
+	//InitialiseValuesFromExistingChunks(plainHeightmap);
+	//InitialiseCorners(plainHeightmap,TERRAIN_TYPE_PLAIN);
+	//DiamondSquare(plainHeightmap, 0, 0, 1, TERRAIN_TYPE_PLAIN);
+
+	////Create the elevated heightmap (More vertical)
+	//InitialiseValuesFromExistingChunks(elevatedHeightmap);
+	//InitialiseCorners(elevatedHeightmap, TERRAIN_TYPE_ELEVATED);
+	//DiamondSquare(elevatedHeightmap, 0, 0, 1, TERRAIN_TYPE_ELEVATED);
+
+	////Create the merge perlin noise
+	//InitialiseCorners(mergeMap, TERRAIN_MERGE_MAP);
+	//DiamondSquare(mergeMap, 0, 0, 1, TERRAIN_MERGE_MAP);
+
+	////Combine the plain and elevated heightmaps using the values contained in the merge map
+	//MergeMaps();
+
 	//Create the basic heightmap (Flat, perlin noise terrain
 	InitialiseValuesFromExistingChunks(plainHeightmap);
-	InitialiseCorners(plainHeightmap,TERRAIN_TYPE_PLAIN);
+	InitialiseCorners(plainHeightmap, TERRAIN_TYPE_PLAIN);
 	DiamondSquare(plainHeightmap, 0, 0, 1, TERRAIN_TYPE_PLAIN);
 
 	//Create the elevated heightmap (More vertical)
@@ -48,11 +83,21 @@ void HeightMapGenerator::GenerateHeightMapUsingCombination()
 	DiamondSquare(elevatedHeightmap, 0, 0, 1, TERRAIN_TYPE_ELEVATED);
 
 	//Create the merge perlin noise
-	InitialiseCorners(mergeMap, TERRAIN_MERGE_MAP);
-	DiamondSquare(mergeMap, 0, 0, 1, TERRAIN_MERGE_MAP);
+	GenerateHeightmapPerlin(mergeMap, 256, 1, chunkX, chunkY);
 
 	//Combine the plain and elevated heightmaps using the values contained in the merge map
-	MergeMaps();
+	MergeMapsDSPerlin();
+}
+
+void HeightMapGenerator::GenerateHeightmapPerlin(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE], int frequency, int magnitude, int xOffset, int yOffset)
+{
+	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+			double xf = ((double)x / frequency) + xOffset;
+			double yf = ((double)y / frequency) + yOffset;
+			heightmap[y][x] = (float)(simplexGen->simplex(xf, yf)*magnitude - (magnitude / 2));
+		}
+	}
 }
 
 void HeightMapGenerator::GenerateHeightmapSimplex(int frequency, int magnitude)
@@ -61,7 +106,7 @@ void HeightMapGenerator::GenerateHeightmapSimplex(int frequency, int magnitude)
 		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
 			double xf = (double)x / frequency;
 			double yf = (double)y / frequency;
-			finalHeightmap[y][x] = (float)(simplexGen->simplex(xf, yf, 0)*magnitude - (magnitude/2));
+			finalHeightmap[y][x] = (float)(simplexGen->simplex(xf, yf)*magnitude - (magnitude/2));
 		}
 	}
 }
@@ -296,6 +341,32 @@ void HeightMapGenerator::MergeMaps()
 				{
 					float percentage = (mergeMap[y][x] - thresholdValue) / scale;
 					//float percentage = (mergeMap[y][x] - )
+					finalHeightmap[y][x] = ((elevatedHeightmap[y][x] * percentage) + (plainHeightmap[y][x] * (1 - percentage)));
+				}
+			}
+			else
+			{
+				finalHeightmap[y][x] = plainHeightmap[y][x];
+			}
+		}
+	}
+}
+
+void HeightMapGenerator::MergeMapsDSPerlin()
+{
+	float thresholdValue = 0.6;
+
+	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+			if (mergeMap[y][x] > thresholdValue)
+			{
+				if (mergeMap[y][x] == 1)
+				{
+					finalHeightmap[y][x] = elevatedHeightmap[y][x];
+				}
+				else
+				{
+					float percentage = (mergeMap[y][x] - thresholdValue) * 2.5;
 					finalHeightmap[y][x] = ((elevatedHeightmap[y][x] * percentage) + (plainHeightmap[y][x] * (1 - percentage)));
 				}
 			}

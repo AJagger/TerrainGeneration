@@ -16,6 +16,7 @@ public:
 	static Mesh* GenerateTriangle();
 	static Mesh* GenerateTriangleStrip();
 	static Mesh* GenerateChunk(float ** heightmap, int chunkZ, int chunkX);
+	static Mesh* GenerateChunkGreyScale(float ** heightmap, int chunkZ, int chunkX);
 	static Mesh* GenerateWaterChunk(int chunkZ, int chunkX);
 	static const int GRID_SIZE = 1;
 

@@ -14,6 +14,8 @@ public:
 	void GenerateWorldThroughCombination();
 	void GenerateSingleHeightmapSimplex();
 	void GenerateSingleHeightmapDS();
+	void GenerateSingleTestCompletelyRandom();
+	void GenerateBlankMap();							//Demo purposes
 	void RenderWorld(Renderer *renderer);
 	void RenderSingleMesh(Renderer *renderer);
 

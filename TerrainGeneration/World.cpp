@@ -47,7 +47,7 @@ void World::GenerateWorldThroughCombination()
 		for (int cgz = 0; cgz < CHUNK_ARRAY_COUNT; cgz++)
 		{
 			HeightMapGenerator* gen = new HeightMapGenerator(GenerateSurroundingHeightmaps(cgx, cgz));
-			gen->GenerateHeightMapUsingCombination();
+			gen->GenerateHeightMapUsingCombination(cgx, cgz);
 			chunkHeightmaps[cgx][cgz] = gen->GetHeightMapAsArray();
 			delete gen;
 		}
@@ -57,7 +57,7 @@ void World::GenerateWorldThroughCombination()
 void World::GenerateSingleHeightmapSimplex()
 {
 	HeightMapGenerator *gen = new HeightMapGenerator(GenerateSurroundingHeightmaps(0, 0));
-	gen->GenerateHeightmapSimplex(512, 300);
+	gen->GenerateHeightmapSimplex(1025, 300); //512 300
 	chunkHeightmaps[0][0] = gen->GetHeightMapAsArray();
 	delete gen;
 }
@@ -66,6 +66,22 @@ void World::GenerateSingleHeightmapDS()
 {
 	HeightMapGenerator *gen = new HeightMapGenerator(GenerateSurroundingHeightmaps(0, 0));
 	gen->GenerateHeightmapSingleDS();
+	chunkHeightmaps[0][0] = gen->GetHeightMapAsArray();
+	delete gen;
+}
+
+void World::GenerateSingleTestCompletelyRandom()
+{
+	HeightMapGenerator *gen = new HeightMapGenerator(GenerateSurroundingHeightmaps(0, 0));
+	gen->GenerateCompleteRandom();
+	chunkHeightmaps[0][0] = gen->GetHeightMapAsArray();
+	delete gen;
+}
+
+void World::GenerateBlankMap()
+{
+	HeightMapGenerator *gen = new HeightMapGenerator(GenerateSurroundingHeightmaps(0, 0));
+	gen->GenerateBlankMap();
 	chunkHeightmaps[0][0] = gen->GetHeightMapAsArray();
 	delete gen;
 }
@@ -99,5 +115,5 @@ void World::GenerateMeshesFromWorld()
 
 void World::RenderSingleMesh(Renderer *renderer)
 {
-	renderer->AddToPipeline(Mesh::GenerateChunk(chunkHeightmaps[0][0], 0, 0));
+	renderer->AddToPipeline(Mesh::GenerateChunkGreyScale(chunkHeightmaps[0][0], 0, 0));
 }

@@ -28,8 +28,17 @@ int main()
 	//world->RenderWorld(&renderer);
 
 	world->GenerateSingleHeightmapSimplex();
-	//world->GenerateSingleHeightmapDS();
+	////world->GenerateSingleHeightmapDS();
 	world->RenderSingleMesh(&renderer);
+
+	//world->GenerateSingleTestCompletelyRandom();
+	//world->RenderSingleMesh(&renderer);
+
+	//world->GenerateBlankMap();
+	//world->RenderSingleMesh(&renderer);
+
+	//world->GenerateSingleHeightmapDS();
+	//world->RenderSingleMesh(&renderer);
 
 	while (w.UpdateWindow() && !Window::GetKeyboard()->KeyDown(KEYBOARD_ESCAPE)) {
 		if (Window::GetKeyboard()->KeyDown(KEYBOARD_1))

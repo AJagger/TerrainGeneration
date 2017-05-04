@@ -5,60 +5,20 @@ public:
 	SimplexNoise();
 	~SimplexNoise();
 
-	double simplex(double x, double y, double z);
-
-	int repeat;
+	double simplex(double x, double y);
 
 private:
-	static double fade(double t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-	//static double lerp(double t, double a, double b) { return a + t * (b - a); }
-	//static double grad(int hash, double x, double y) {
-	//	return p[hash].x * x + p[hash].Y * y;
-	//};
-	//static double grad(int hash, double x, double y, double z = 0) {
-	//	int h = hash & 15;                                    // Take the hashed value and take the first 4 bits of it (15 == 0b1111)
-	//	double u = h < 8 /* 0b1000 */ ? x : y;                // If the most significant bit (MSB) of the hash is 0 then set u = x.  Otherwise y.
+	
+	int grad3[12][3] = { { 1,1,0 },{ -1,1,0 },{ 1,-1,0 },{ -1,-1,0 },
+	{ 1,0,1 },{ -1,0,1 },{ 1,0,-1 },{ -1,0,-1 },
+	{ 0,1,1 },{ 0,-1,1 },{ 0,1,-1 },{ 0,-1,-1 } };
 
-	//	double v;                                             // In Ken Perlin's original implementation this was another conditional operator (?:).  I
-	//														  // expanded it for readability.
-
-	//	if (h < 4 /* 0b0100 */)                                // If the first and second significant bits are 0 set v = y
-	//		v = y;
-	//	else if (h == 12 /* 0b1100 */ || h == 14 /* 0b1110*/)  // If the first and second significant bits are 1 set v = x
-	//		v = x;
-	//	else                                                  // If the first and second significant bits are not equal (0/1, 1/0) set v = z
-	//		v = z;
-
-	//	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v); // Use the last 2 bits to decide if u and v are positive or negative.  Then return their addition.
-	//}
-
-	static double lerp(double a, double b, double x) {
-		return a + x * (b - a);
+	static int fastfloor(double x) {
+		return x>0 ? (int)x : (int)x - 1;
 	}
 
-	static double grad(int hash, double x, double y, double z)
-	{
-		int h = hash & 15;									// Take the hashed value and take the first 4 bits of it (15 == 0b1111)
-		double u = h < 8 /* 0b1000 */ ? x : y;				// If the most significant bit (MSB) of the hash is 0 then set u = x.  Otherwise y.
-
-		double v;											// In Ken Perlin's original implementation this was another conditional operator (?:).  I
-															// expanded it for readability.
-
-		if (h < 4 /* 0b0100 */)								// If the first and second significant bits are 0 set v = y
-			v = y;
-		else if (h == 12 /* 0b1100 */ || h == 14 /* 0b1110*/)// If the first and second significant bits are 1 set v = x
-			v = x;
-		else 												// If the first and second significant bits are not equal (0/1, 1/0) set v = z
-			v = z;
-
-		return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v); // Use the last 2 bits to decide if u and v are positive or negative.  Then return their addition.
-	}
-
-	int inc(int num) {
-		num++;
-		if (repeat > 0) num %= repeat;
-
-		return num;
+	static double dot(int g[], double x, double y, double z) {
+		return g[0] * x + g[1] * y + g[2] * z;
 	}
 
 	int *p = new int[512];

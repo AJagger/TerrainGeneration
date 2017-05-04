@@ -21,7 +21,10 @@ public:
 	static const int NOISE_1D_SIZE = HEIGHTMAP_SIZE * 2 + 1;
 	static const int WATER_LEVEL = -20;
 
-	void GenerateHeightMapUsingCombination();
+	void GenerateCompleteRandom();	//Demo purposes
+	void GenerateBlankMap();		//Demo purposes
+	void GenerateHeightMapUsingCombination(int chunkX, int chunkY);
+	void GenerateHeightmapPerlin(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE], int frequency, int magnitude, int xOffset, int yOffset);
 	void GenerateHeightmapSimplex(int frequency, int magnitude);
 	void GenerateHeightmapSingleDS();
 
@@ -48,7 +51,7 @@ private:
 
 	//Chunk Data
 	static const int MAX_INITIAL_RAND = 120; //std 60 30 15 --- 60 //120
-	static const int MAX_ITERATIVE_RAND = 200; //std 20 60 20 --- 120 //240
+	static const int MAX_ITERATIVE_RAND = 200; //std 20 60 20 --- 120 //240 //200
 	static const int TERRAIN_TYPE_PLAIN = 0;
 	static const int TERRAIN_TYPE_ELEVATED = 1;
 	static const int TERRAIN_MERGE_MAP = 0;
@@ -65,6 +68,7 @@ private:
 
 	//Core functions for Combination Method
 	void MergeMaps();
+	void MergeMapsDSPerlin();
 
 	//Core functions for Seeding Method
 	void Generate1DNoise(float(&heightmap)[NOISE_1D_SIZE], int startingX, int iteration);

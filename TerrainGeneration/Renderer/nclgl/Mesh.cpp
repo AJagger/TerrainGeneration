@@ -156,6 +156,107 @@ Mesh * Mesh::GenerateChunk(float ** heightmap, int chunkZ, int chunkX)
 	return m;
 }
 
+//Left->Right = +Z, Bottom->Top = +X
+Mesh * Mesh::GenerateChunkGreyScale(float ** heightmap, int chunkZ, int chunkX)
+{
+	Mesh*m = new Mesh();
+	m->numVertices = (HeightMapGenerator::HEIGHTMAP_SIZE*HeightMapGenerator::HEIGHTMAP_SIZE) + ((HeightMapGenerator::HEIGHTMAP_SIZE - 1) * (HeightMapGenerator::HEIGHTMAP_SIZE - 2));
+	m->type = GL_TRIANGLE_STRIP;
+
+	m->vertices = new Vector3[m->numVertices];
+	m->colours = new Vector4[m->numVertices];
+
+	float heighDifPercentage = 0;
+	float minHeight = 0;
+	float maxHeight = 0;
+	float heightDifRange = 1;
+
+	for (int row = 0; row < (HeightMapGenerator::HEIGHTMAP_SIZE - 1); row++)
+	{
+		for (int col = 0; col < HeightMapGenerator::HEIGHTMAP_SIZE; col++)
+		{
+			if(heightmap[col][row] > maxHeight)
+			{
+				maxHeight = heightmap[col][row];
+			}
+			if (heightmap[col][row] < minHeight)
+			{
+				minHeight = heightmap[col][row];
+			}
+		}
+	}
+
+	heightDifRange = maxHeight - minHeight;
+
+	int vertCount = 0;
+	for (int row = 0; row < (HeightMapGenerator::HEIGHTMAP_SIZE - 1); row++) {
+		//Even Rows
+		if ((row % 2) == 0)
+		{
+			for (int col = 0; col < HeightMapGenerator::HEIGHTMAP_SIZE; col++) {
+
+				m->vertices[vertCount] = Vector3(
+					((float)col * GRID_SIZE) + (chunkX * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET),	//x
+					heightmap[col][row],														//y
+					((float)row * GRID_SIZE) + (chunkZ * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET)		//z
+				);
+				//heighDifPercentage = (heightmap[col][row] - minHeight) / heightDif;
+				m->colours[vertCount] = DetermineColour((heightmap[col][row] - minHeight) / heightDifRange);
+				//m->colours[vertCount] = DetermineColour(heightmap[col][row]);
+				vertCount++;
+
+				m->vertices[vertCount] = Vector3(
+					((float)col * GRID_SIZE) + (chunkX * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET),			//x
+					heightmap[col][row + 1],															//y
+					((float)(row + 1) * GRID_SIZE) + (chunkZ * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET)		//z
+				);
+				//heighDifPercentage = (heightmap[col][row + 1] - minHeight) / heightDif;
+				//m->colours[vertCount] = Vector4(0.6f, (1.0f - (heighDifPercentage * 0.5)), (heighDifPercentage * 0.5), 1.0f);
+				m->colours[vertCount] = DetermineColour((heightmap[col][row + 1] - minHeight) / heightDifRange);
+				vertCount++;
+			}
+		}
+		//Odd Rows
+		else
+		{
+			for (int col = (HeightMapGenerator::HEIGHTMAP_SIZE - 1); col > 0; col--) {
+
+				m->vertices[vertCount] = Vector3(
+					((float)col * GRID_SIZE) + (chunkX * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET),			//x
+					heightmap[col][row + 1],															//y
+					((float)(row + 1) * GRID_SIZE) + (chunkZ * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET)		//z
+				);
+				//heighDifPercentage = (heightmap[col][row + 1] - minHeight) / heightDif;
+				//m->colours[vertCount] = Vector4(0.6f, (1.0f - (heighDifPercentage * 0.5)), (heighDifPercentage * 0.5), 1.0f);
+				m->colours[vertCount] = DetermineColour((heightmap[col][row + 1] - minHeight) / heightDifRange);
+				vertCount++;
+
+				m->vertices[vertCount] = Vector3(
+					((float)(col - 1) * GRID_SIZE) + (chunkX * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET),	//x
+					heightmap[col - 1][row],														//y
+					((float)row * GRID_SIZE) + (chunkZ * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET)			//z
+				);
+				//heighDifPercentage = (heightmap[col - 1][row] - minHeight) / heightDif;
+				//m->colours[vertCount] = Vector4(0.5f, (1.0f - (heighDifPercentage * 0.5)), (heighDifPercentage * 0.5), 1.0f);
+				m->colours[vertCount] = DetermineColour((heightmap[col - 1][row] - minHeight) / heightDifRange);
+				vertCount++;
+			}
+		}
+	}
+	m->vertices[vertCount] = Vector3(
+		0.0f + (chunkX * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET),													//x
+		heightmap[HeightMapGenerator::HEIGHTMAP_SIZE - 1][HeightMapGenerator::HEIGHTMAP_SIZE - 1],								//y
+		((float)(HeightMapGenerator::HEIGHTMAP_SIZE - 1) * GRID_SIZE) + (chunkZ * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET)	//z
+	);
+	//heighDifPercentage = (heightmap[HeightMapGenerator::HEIGHTMAP_SIZE - 1][HeightMapGenerator::HEIGHTMAP_SIZE - 1] - minHeight) / heightDif;
+	//m->colours[vertCount] = Vector4(0.5f, (1.0f - (heighDifPercentage * 0.5)), (heighDifPercentage * 0.5), 1.0f);
+	m->colours[vertCount] = DetermineColour((heightmap[HeightMapGenerator::HEIGHTMAP_SIZE - 1][HeightMapGenerator::HEIGHTMAP_SIZE - 1] - minHeight) / heightDifRange);
+
+	m->BufferData();
+
+	return m;
+}
+
 Mesh * Mesh::GenerateWaterChunk(int chunkZ, int chunkX)
 {
 	Mesh*m = new Mesh();

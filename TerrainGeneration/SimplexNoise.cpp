@@ -4,7 +4,6 @@
 
 SimplexNoise::SimplexNoise()
 {
-	repeat = -1;
 	for(int i = 0; i < 512; i++)
 	{
 		p[i] = permutation[i % 256];
@@ -15,77 +14,65 @@ SimplexNoise::~SimplexNoise()
 {
 }
 
-double SimplexNoise::simplex(double x, double y, double z)
+double SimplexNoise::simplex(double x, double y)
 {
-	//int unitX = (int)floor(x) & 255;                // FIND UNIT SQUARE THAT
-	//int unitY = (int)floor(y) & 255;                 // CONTAINS POINT.
+	double n0, n1, n2;									// Noise contributions from the three corners
+	
+	// Skew the input space to determine which simplex cell we're in
+	double F2 = 0.5*(sqrt(3.0) - 1.0);
+	double s = (x + y)*F2;							// Hairy factor for 2D
+	int i = fastfloor(x + s);
+	int j = fastfloor(y + s);
 
-	//int relX = x - floor(x);                                // FIND RELATIVE X,Y,Z
-	//int relY = y - floor(y);                                // OF POINT IN Square.
+	double G2 = (3.0 - sqrt(3.0)) / 6.0;
+	double t = (i + j)*G2;
+	double X0 = i - t;									// Unskew the cell origin back to (x,y) space
+	double Y0 = j - t;
+	double x0 = x - X0;								// The x,y distances from the cell origin
+	double y0 = y - Y0;
 
-	//double fadeX = fade(x);                             // COMPUTE FADE CURVES
-	//double fadeY = fade(y);                             // FOR EACH OF X,Y,Z.
+	// For the 2D case, the simplex shape is an equilateral triangle.
+	// Determine which simplex we are in.
+	int i1, j1;											// Offsets for second (middle) corner of simplex in (i,j) coords
+	if (x0>y0) { i1 = 1; j1 = 0; }						// lower triangle, XY order: (0,0)->(1,0)->(1,1)
+	else { i1 = 0; j1 = 1; }							// upper triangle, YX order: (0,0)->(0,1)->(1,1)
 
-	////Hash coordinates of 4 square corners
-	//int AA = p[p[unitX] + unitY],
-	//	AB = p[p[unitX] + (unitY + 1)],
-	//	BA = p[p[(unitX + 1)] + unitY],
-	//	BB = p[p[(unitX + 1)] + (unitY + 1)];
+	// A step of (1,0) in (i,j) means a step of (1-c,-c) in (x,y), and
+	// a step of (0,1) in (i,j) means a step of (-c,1-c) in (x,y), where
+	// c = (3-sqrt(3))/6
+	double x1 = x0 - i1 + G2;							// Offsets for middle corner in (x,y) unskewed coords
+	double y1 = y0 - j1 + G2;
+	double x2 = x0 - 1.0 + 2.0 * G2;					// Offsets for last corner in (x,y) unskewed coords
+	double y2 = y0 - 1.0 + 2.0 * G2;
 
+	// Work out the hashed gradient indices of the three simplex corners
+	int ii = i & 255;
+	int jj = j & 255;
+	int gi0 = p[ii + p[jj]] % 12;
+	int gi1 = p[ii + i1 + p[jj + j1]] % 12;
+	int gi2 = p[ii + 1 + p[jj + 1]] % 12;
 
-	//return lerp(fadeY, lerp(fadeX, grad(AA, relX, relY), grad(BA, (relX - 1), relY)), lerp(fadeX, grad(AB, relX, (relY - 1)), grad(BB, (relX -1), (relY-1))));
+	// Calculate the contribution from the three corners
+	double t0 = 0.5 - x0*x0 - y0*y0;
+	if (t0<0) n0 = 0.0;
+	else {
+		t0 *= t0;
+		n0 = t0 * t0 * dot(grad3[gi0], x0, y0, 0);			// (x,y) of grad3 used for 2D gradient
+	}
+	double t1 = 0.5 - x1*x1 - y1*y1;
+	if (t1<0) n1 = 0.0;
+	else {
+		t1 *= t1;
+		n1 = t1 * t1 * dot(grad3[gi1], x1, y1, 0);
+	}
+	double t2 = 0.5 - x2*x2 - y2*y2;
+	if (t2<0) n2 = 0.0;
+	else {
+		t2 *= t2;
+		n2 = t2 * t2 * dot(grad3[gi2], x2, y2, 0);
+	}
 
-	////return lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z),  // AND ADD
-	////	grad(p[BA], x - 1, y, z)), // BLENDED
-	////	lerp(u, grad(p[AB], x, y - 1, z),  // RESULTS
-	////		grad(p[BB], x - 1, y - 1, z))),// FROM  8
-	////	lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1),  // CORNERS
-	////		grad(p[BA + 1], x - 1, y, z - 1)), // OF CUBE
-	////		lerp(u, grad(p[AB + 1], x, y - 1, z - 1),
-	////			grad(p[BB + 1], x - 1, y - 1, z - 1))));
-
-	//if (repeat > 0) {									// If we have any repeat on, change the coordinates to their "local" repetitions
-	//	x = x % (double)repeat;
-	//	y = y % repeat;
-	//	z = z%repeat;
-	//}
-
-	int xi = (int)x & 255;								// Calculate the "unit cube" that the point asked will be located in
-	int yi = (int)y & 255;								// The left bound is ( |_x_|,|_y_|,|_z_| ) and the right bound is that
-	int zi = (int)z & 255;								// plus 1.  Next we calculate the location (from 0.0 to 1.0) in that cube.
-	double xf = x - (int)x;								// We also fade the location to smooth the result.
-	double yf = y - (int)y;
-	double zf = z - (int)z;
-	double u = fade(xf);
-	double v = fade(yf);
-	double w = fade(zf);
-
-	int aaa, aba, aab, abb, baa, bba, bab, bbb;
-	aaa = p[p[p[xi] + yi] + zi];
-	aba = p[p[p[xi] + inc(yi)] + zi];
-	aab = p[p[p[xi] + yi] + inc(zi)];
-	abb = p[p[p[xi] + inc(yi)] + inc(zi)];
-	baa = p[p[p[inc(xi)] + yi] + zi];
-	bba = p[p[p[inc(xi)] + inc(yi)] + zi];
-	bab = p[p[p[inc(xi)] + yi] + inc(zi)];
-	bbb = p[p[p[inc(xi)] + inc(yi)] + inc(zi)];
-
-	double x1, x2, y1, y2;
-	x1 = lerp(grad(aaa, xf, yf, zf),				// The gradient function calculates the dot product between a pseudorandom
-		grad(baa, xf - 1, yf, zf),				// gradient vector and the vector from the input coordinate to the 8
-		u);										// surrounding points in its unit cube.
-	x2 = lerp(grad(aba, xf, yf - 1, zf),				// This is all then lerped together as a sort of weighted average based on the faded (u,v,w)
-		grad(bba, xf - 1, yf - 1, zf),				// values we made earlier.
-		u);
-	y1 = lerp(x1, x2, v);
-
-	x1 = lerp(grad(aab, xf, yf, zf - 1),
-		grad(bab, xf - 1, yf, zf - 1),
-		u);
-	x2 = lerp(grad(abb, xf, yf - 1, zf - 1),
-		grad(bbb, xf - 1, yf - 1, zf - 1),
-		u);
-	y2 = lerp(x1, x2, v);
-
-	return (lerp(y1, y2, w) + 1) / 2;						// For convenience we bound it to 0 - 1 (theoretical min/max before is -1 - 1)
+	// Add contributions from each corner to get the final noise value.
+	// The result is scaled to return values in the interval [-1,1].
+	return 70.0 * (n0 + n1 + n2);
 }
