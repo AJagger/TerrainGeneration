@@ -5,19 +5,21 @@
 #include "Renderer/nclgl/HMCoordinate.h"
 #include <cmath>
 #include "SimplexNoise.h"
+#include <iostream>
+#include <chrono>
 
 
 HeightMapGenerator::HeightMapGenerator(SurroundingHeightmaps sHm, int seed)
 {
-	//Initialise with generator Seed
-	if (seed == NULL)
-	{
-		srand(static_cast <unsigned> (time(0)));
-	}
-	else
-	{
-		srand(seed);
-	}
+	////Initialise with generator Seed
+	//if (seed == NULL)
+	//{
+	//	srand(static_cast <unsigned> (time(0)));
+	//}
+	//else
+	//{
+	//	srand(seed);
+	//}
 
 	surroundingHeightMaps = sHm;
 
@@ -55,9 +57,42 @@ void HeightMapGenerator::GenerateBlankMap()
 
 void HeightMapGenerator::GenerateHeightMapUsingCombination(int chunkX, int chunkY)
 {
-	////Create the basic heightmap (Flat, perlin noise terrain
+
+	//Create the basic heightmap (Flat, perlin noise terrain
+	InitialiseValuesFromExistingChunks(plainHeightmap);
+	InitialiseCorners(plainHeightmap,TERRAIN_TYPE_PLAIN);
+	DiamondSquare(plainHeightmap, 0, 0, 1, TERRAIN_TYPE_PLAIN);
+
+	//Create the elevated heightmap (More vertical)
+	InitialiseValuesFromExistingChunks(elevatedHeightmap);
+	InitialiseCorners(elevatedHeightmap, TERRAIN_TYPE_ELEVATED);
+	DiamondSquare(elevatedHeightmap, 0, 0, 1, TERRAIN_TYPE_ELEVATED);
+
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+	//Create the merge noise
+	InitialiseCorners(mergeMap, TERRAIN_MERGE_MAP);
+	DiamondSquare(mergeMap, 0, 0, 1, TERRAIN_MERGE_MAP);
+
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+	std::cout << "\nGen3: " << duration;
+
+	//Combine the plain and elevated heightmaps using the values contained in the merge map
+	MergeMaps();
+
+	//reset maps
+	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+			plainHeightmap[y][x] = 0.0f;
+			elevatedHeightmap[y][x] = 0.0f;
+			mergeMap[y][x] = 0.0f;
+		}
+	}
+
+	//Create the basic heightmap (Flat, perlin noise terrain
 	//InitialiseValuesFromExistingChunks(plainHeightmap);
-	//InitialiseCorners(plainHeightmap,TERRAIN_TYPE_PLAIN);
+	//InitialiseCorners(plainHeightmap, TERRAIN_TYPE_PLAIN);
 	//DiamondSquare(plainHeightmap, 0, 0, 1, TERRAIN_TYPE_PLAIN);
 
 	////Create the elevated heightmap (More vertical)
@@ -66,56 +101,81 @@ void HeightMapGenerator::GenerateHeightMapUsingCombination(int chunkX, int chunk
 	//DiamondSquare(elevatedHeightmap, 0, 0, 1, TERRAIN_TYPE_ELEVATED);
 
 	////Create the merge perlin noise
-	//InitialiseCorners(mergeMap, TERRAIN_MERGE_MAP);
-	//DiamondSquare(mergeMap, 0, 0, 1, TERRAIN_MERGE_MAP);
+	//GenerateHeightmapPerlin(mergeMap, 512, 1, chunkX, chunkY);
 
 	////Combine the plain and elevated heightmaps using the values contained in the merge map
-	//MergeMaps();
-
-	//Create the basic heightmap (Flat, perlin noise terrain
-	InitialiseValuesFromExistingChunks(plainHeightmap);
-	InitialiseCorners(plainHeightmap, TERRAIN_TYPE_PLAIN);
-	DiamondSquare(plainHeightmap, 0, 0, 1, TERRAIN_TYPE_PLAIN);
-
-	//Create the elevated heightmap (More vertical)
-	InitialiseValuesFromExistingChunks(elevatedHeightmap);
-	InitialiseCorners(elevatedHeightmap, TERRAIN_TYPE_ELEVATED);
-	DiamondSquare(elevatedHeightmap, 0, 0, 1, TERRAIN_TYPE_ELEVATED);
-
-	//Create the merge perlin noise
-	GenerateHeightmapPerlin(mergeMap, 256, 1, chunkX, chunkY);
-
-	//Combine the plain and elevated heightmaps using the values contained in the merge map
-	MergeMapsDSPerlin();
+	//MergeMapsDSPerlin();
 }
 
 void HeightMapGenerator::GenerateHeightmapPerlin(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE], int frequency, int magnitude, int xOffset, int yOffset)
 {
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
 		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
 			double xf = ((double)x / frequency) + xOffset;
 			double yf = ((double)y / frequency) + yOffset;
-			heightmap[y][x] = (float)(simplexGen->simplex(xf, yf)*magnitude - (magnitude / 2));
+			heightmap[y][x] = (float)(perlinGen->perlin(xf, yf, 0)*magnitude - (magnitude / 2));
 		}
 	}
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+	std::cout << "\nPerlin Duration: " << duration;
 }
 
-void HeightMapGenerator::GenerateHeightmapSimplex(int frequency, int magnitude)
+void HeightMapGenerator::GenerateHeightmapSimplex(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE], int frequency, int magnitude, int xOffset, int yOffset)
 {
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+			double xf = (double)x / frequency + xOffset;
+			double yf = (double)y / frequency + yOffset;
+			finalHeightmap[y][x] = (float)(simplexGen->simplex(xf, yf)*magnitude - (magnitude/2));
+		}
+	}
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+	std::cout << "\nSimplex Duration: " << duration;
+}
+
+void HeightMapGenerator::GenerateHeightmapSinglePerlin(int frequency, int magnitude)
+{
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
+		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
+			double xf = ((double)x / frequency);
+			double yf = ((double)y / frequency);
+			finalHeightmap[y][x] = (float)(perlinGen->perlin(xf, yf, 0)*magnitude - (magnitude / 2));
+		}
+	}
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+	std::cout << "\nPerlin Duration: " << duration;
+}
+
+void HeightMapGenerator::GenerateHeightmapSingleSimplex(int frequency, int magnitude)
+{
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
 		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
 			double xf = (double)x / frequency;
 			double yf = (double)y / frequency;
-			finalHeightmap[y][x] = (float)(simplexGen->simplex(xf, yf)*magnitude - (magnitude/2));
+			finalHeightmap[y][x] = (float)(simplexGen->simplex(xf, yf)*magnitude - (magnitude / 2));
 		}
 	}
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+	std::cout << "\nSimplex Duration: " << duration;
 }
 
 void HeightMapGenerator::GenerateHeightmapSingleDS()
 {
+	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 	InitialiseValuesFromExistingChunks(finalHeightmap);
-	InitialiseCorners(finalHeightmap, TERRAIN_TYPE_PLAIN);
-	DiamondSquare(finalHeightmap, 0, 0, 1, TERRAIN_TYPE_PLAIN);
+	InitialiseCorners(finalHeightmap, TERRAIN_TYPE_ELEVATED);
+	DiamondSquare(finalHeightmap, 0, 0, 1, TERRAIN_TYPE_ELEVATED);
+	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+	std::cout << "\nDS Duration: " << duration;
 }
 
 float ** HeightMapGenerator::GetHeightMapAsArray()
@@ -258,10 +318,11 @@ void HeightMapGenerator::DiamondSquare(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTM
 
 		diamondValue += (GenerateRandomVariance(terrainType) / dampening);
 
-		if (heightmap[midPoint.y][top.x] == 0)
-		{
-			heightmap[midPoint.y][midPoint.x] = static_cast <float> (diamondValue);
-		}
+		//if (heightmap[midPoint.y][top.x] == 0)
+		//{
+		//	heightmap[midPoint.y][midPoint.x] = static_cast <float> (diamondValue);
+		//}
+		heightmap[midPoint.y][midPoint.x] = static_cast <float> (diamondValue);
 
 		//Square step	//Divide into top/bottom etc so work does not need to be done if value already exists
 		float topValue =
@@ -286,18 +347,18 @@ void HeightMapGenerator::DiamondSquare(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTM
 		bottomValue += (GenerateRandomVariance(terrainType) / dampening);
 		leftValue += (GenerateRandomVariance(terrainType) / dampening);
 
-		//if (heightmap[top.y][top.x] != 0) {
-		//	topValue = (topValue + heightmap[top.y][top.x]) / 2;
-		//}
-		//if (heightmap[right.y][right.x] != 0) {
-		//	rightValue = (rightValue + heightmap[right.y][right.x]) / 2;
-		//}
-		//if (heightmap[bottom.y][bottom.x] != 0) {
-		//	bottomValue = (bottomValue + heightmap[bottom.y][bottom.x]) / 2;
-		//}
-		//if (heightmap[left.y][left.x] != 0) {
-		//	leftValue = (leftValue + heightmap[left.y][left.x]) / 2;
-		//}
+		if (heightmap[top.y][top.x] != 0) {
+			topValue = (topValue + heightmap[top.y][top.x]) / 2;
+		}
+		if (heightmap[right.y][right.x] != 0) {
+			rightValue = (rightValue + heightmap[right.y][right.x]) / 2;
+		}
+		if (heightmap[bottom.y][bottom.x] != 0) {
+			bottomValue = (bottomValue + heightmap[bottom.y][bottom.x]) / 2;
+		}
+		if (heightmap[left.y][left.x] != 0) {
+			leftValue = (leftValue + heightmap[left.y][left.x]) / 2;
+		}
 
 		if (heightmap[top.y][top.x] == 0)
 		{
@@ -354,7 +415,7 @@ void HeightMapGenerator::MergeMaps()
 
 void HeightMapGenerator::MergeMapsDSPerlin()
 {
-	float thresholdValue = 0.6;
+	float thresholdValue = 0.5;
 
 	for (int y = 0; y < HEIGHTMAP_SIZE; y++) {
 		for (int x = 0; x < HEIGHTMAP_SIZE; x++) {
@@ -366,7 +427,7 @@ void HeightMapGenerator::MergeMapsDSPerlin()
 				}
 				else
 				{
-					float percentage = (mergeMap[y][x] - thresholdValue) * 2.5;
+					float percentage = (mergeMap[y][x] - thresholdValue) * 2;
 					finalHeightmap[y][x] = ((elevatedHeightmap[y][x] * percentage) + (plainHeightmap[y][x] * (1 - percentage)));
 				}
 			}

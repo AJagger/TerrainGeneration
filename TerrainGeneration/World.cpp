@@ -41,6 +41,7 @@ HeightMapGenerator::SurroundingHeightmaps World::GenerateSurroundingHeightmaps(i
 
 void World::GenerateWorldThroughCombination()
 {
+	srand(time(0));
 	//Generate chunks. Left->Right = +Z, Bottom->Top = +X
 	for (int cgx = 0; cgx < CHUNK_ARRAY_COUNT; cgx++)
 	{
@@ -54,10 +55,18 @@ void World::GenerateWorldThroughCombination()
 	}
 }
 
+void World::GenerateSingleHeightmapPerlin()
+{
+	HeightMapGenerator *gen = new HeightMapGenerator(GenerateSurroundingHeightmaps(0, 0));
+	gen->GenerateHeightmapSinglePerlin(257, 300); //512 300
+	chunkHeightmaps[0][0] = gen->GetHeightMapAsArray();
+	delete gen;
+}
+
 void World::GenerateSingleHeightmapSimplex()
 {
 	HeightMapGenerator *gen = new HeightMapGenerator(GenerateSurroundingHeightmaps(0, 0));
-	gen->GenerateHeightmapSimplex(1025, 300); //512 300
+	gen->GenerateHeightmapSingleSimplex(257, 300); //512 300
 	chunkHeightmaps[0][0] = gen->GetHeightMapAsArray();
 	delete gen;
 }

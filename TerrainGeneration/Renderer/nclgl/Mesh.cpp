@@ -201,7 +201,7 @@ Mesh * Mesh::GenerateChunkGreyScale(float ** heightmap, int chunkZ, int chunkX)
 					((float)row * GRID_SIZE) + (chunkZ * HeightMapGenerator::HEIGHTMAP_SIZE_OFFSET)		//z
 				);
 				//heighDifPercentage = (heightmap[col][row] - minHeight) / heightDif;
-				m->colours[vertCount] = DetermineColour((heightmap[col][row] - minHeight) / heightDifRange);
+				m->colours[vertCount] = DetermineColourGreyScale((heightmap[col][row] - minHeight) / heightDifRange);
 				//m->colours[vertCount] = DetermineColour(heightmap[col][row]);
 				vertCount++;
 
@@ -212,7 +212,7 @@ Mesh * Mesh::GenerateChunkGreyScale(float ** heightmap, int chunkZ, int chunkX)
 				);
 				//heighDifPercentage = (heightmap[col][row + 1] - minHeight) / heightDif;
 				//m->colours[vertCount] = Vector4(0.6f, (1.0f - (heighDifPercentage * 0.5)), (heighDifPercentage * 0.5), 1.0f);
-				m->colours[vertCount] = DetermineColour((heightmap[col][row + 1] - minHeight) / heightDifRange);
+				m->colours[vertCount] = DetermineColourGreyScale((heightmap[col][row + 1] - minHeight) / heightDifRange);
 				vertCount++;
 			}
 		}
@@ -228,7 +228,7 @@ Mesh * Mesh::GenerateChunkGreyScale(float ** heightmap, int chunkZ, int chunkX)
 				);
 				//heighDifPercentage = (heightmap[col][row + 1] - minHeight) / heightDif;
 				//m->colours[vertCount] = Vector4(0.6f, (1.0f - (heighDifPercentage * 0.5)), (heighDifPercentage * 0.5), 1.0f);
-				m->colours[vertCount] = DetermineColour((heightmap[col][row + 1] - minHeight) / heightDifRange);
+				m->colours[vertCount] = DetermineColourGreyScale((heightmap[col][row + 1] - minHeight) / heightDifRange);
 				vertCount++;
 
 				m->vertices[vertCount] = Vector3(
@@ -238,7 +238,7 @@ Mesh * Mesh::GenerateChunkGreyScale(float ** heightmap, int chunkZ, int chunkX)
 				);
 				//heighDifPercentage = (heightmap[col - 1][row] - minHeight) / heightDif;
 				//m->colours[vertCount] = Vector4(0.5f, (1.0f - (heighDifPercentage * 0.5)), (heighDifPercentage * 0.5), 1.0f);
-				m->colours[vertCount] = DetermineColour((heightmap[col - 1][row] - minHeight) / heightDifRange);
+				m->colours[vertCount] = DetermineColourGreyScale((heightmap[col - 1][row] - minHeight) / heightDifRange);
 				vertCount++;
 			}
 		}
@@ -250,7 +250,7 @@ Mesh * Mesh::GenerateChunkGreyScale(float ** heightmap, int chunkZ, int chunkX)
 	);
 	//heighDifPercentage = (heightmap[HeightMapGenerator::HEIGHTMAP_SIZE - 1][HeightMapGenerator::HEIGHTMAP_SIZE - 1] - minHeight) / heightDif;
 	//m->colours[vertCount] = Vector4(0.5f, (1.0f - (heighDifPercentage * 0.5)), (heighDifPercentage * 0.5), 1.0f);
-	m->colours[vertCount] = DetermineColour((heightmap[HeightMapGenerator::HEIGHTMAP_SIZE - 1][HeightMapGenerator::HEIGHTMAP_SIZE - 1] - minHeight) / heightDifRange);
+	m->colours[vertCount] = DetermineColourGreyScale((heightmap[HeightMapGenerator::HEIGHTMAP_SIZE - 1][HeightMapGenerator::HEIGHTMAP_SIZE - 1] - minHeight) / heightDifRange);
 
 	m->BufferData();
 
@@ -353,28 +353,28 @@ Vector4 Mesh::DetermineColour(float elevation)
 	return Vector4(r, g, b, 1.0f);
 }
 
-//Vector4 Mesh::DetermineColour(float elevation)
-//{
-//	float r, g, b = 0.0f;
-//
-//	if (elevation < 0)
-//	{
-//		r = 1.0f;
-//		g = 1.0f;
-//		b = 1.0f;
-//	}
-//	else if (elevation <= 1)
-//	{
-//		r = 1 - elevation;
-//		g = 1 - elevation;
-//		b = 1 - elevation;
-//	}
-//	else
-//	{
-//		r = 0.0f;
-//		g = 0.0f;
-//		b = 0.0f;
-//	}
-//
-//	return Vector4(r, g, b, 1.0f);
-//}
+Vector4 Mesh::DetermineColourGreyScale(float elevation)
+{
+	float r, g, b = 0.0f;
+
+	if (elevation < 0)
+	{
+		r = 1.0f;
+		g = 1.0f;
+		b = 1.0f;
+	}
+	else if (elevation <= 1)
+	{
+		r = 1 - elevation;
+		g = 1 - elevation;
+		b = 1 - elevation;
+	}
+	else
+	{
+		r = 0.0f;
+		g = 0.0f;
+		b = 0.0f;
+	}
+
+	return Vector4(r, g, b, 1.0f);
+}

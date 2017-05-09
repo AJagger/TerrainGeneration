@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include "SimplexNoise.h"
+#include "PerlinNoise.h"
 
 class HeightMapGenerator
 {
@@ -25,7 +26,9 @@ public:
 	void GenerateBlankMap();		//Demo purposes
 	void GenerateHeightMapUsingCombination(int chunkX, int chunkY);
 	void GenerateHeightmapPerlin(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE], int frequency, int magnitude, int xOffset, int yOffset);
-	void GenerateHeightmapSimplex(int frequency, int magnitude);
+	void GenerateHeightmapSimplex(float(&heightmap)[HEIGHTMAP_SIZE][HEIGHTMAP_SIZE], int frequency, int magnitude, int xOffset, int yOffset);
+	void GenerateHeightmapSinglePerlin(int frequency, int magnitude);
+	void GenerateHeightmapSingleSimplex(int frequency, int magnitude);
 	void GenerateHeightmapSingleDS();
 
 	float** GetHeightMapAsArray();
@@ -51,7 +54,7 @@ private:
 
 	//Chunk Data
 	static const int MAX_INITIAL_RAND = 120; //std 60 30 15 --- 60 //120
-	static const int MAX_ITERATIVE_RAND = 200; //std 20 60 20 --- 120 //240 //200
+	static const int MAX_ITERATIVE_RAND = 240; //std 20 60 20 --- 120 //240 //200
 	static const int TERRAIN_TYPE_PLAIN = 0;
 	static const int TERRAIN_TYPE_ELEVATED = 1;
 	static const int TERRAIN_MERGE_MAP = 0;
@@ -75,5 +78,6 @@ private:
 
 	//Core Functions for Simplex Noise
 	SimplexNoise *simplexGen = new SimplexNoise();
+	PerlinNoise *perlinGen = new PerlinNoise();
 };
 

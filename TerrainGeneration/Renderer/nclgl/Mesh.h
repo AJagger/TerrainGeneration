@@ -23,6 +23,7 @@ public:
 protected:
 	void BufferData();
 	static Vector4 DetermineColour(float elevation);
+	static Vector4 DetermineColourGreyScale(float elevation);
 
 	GLuint arrayObject;
 	GLuint bufferObject[MAX_BUFFER];

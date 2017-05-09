@@ -13,6 +13,7 @@ public:
 	static const int CHUNK_ARRAY_COUNT = 4;
 	void GenerateWorldThroughCombination();
 	void GenerateSingleHeightmapSimplex();
+	void GenerateSingleHeightmapPerlin();
 	void GenerateSingleHeightmapDS();
 	void GenerateSingleTestCompletelyRandom();
 	void GenerateBlankMap();							//Demo purposes

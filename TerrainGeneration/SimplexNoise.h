@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdint>
+
 class SimplexNoise
 {
 public:
@@ -9,17 +11,20 @@ public:
 
 private:
 	
-	int grad3[12][3] = { { 1,1,0 },{ -1,1,0 },{ 1,-1,0 },{ -1,-1,0 },
-	{ 1,0,1 },{ -1,0,1 },{ 1,0,-1 },{ -1,0,-1 },
-	{ 0,1,1 },{ 0,-1,1 },{ 0,1,-1 },{ 0,-1,-1 } };
+	//int grad3[12][3] = { { 1,1,0 },{ -1,1,0 },{ 1,-1,0 },{ -1,-1,0 },
+	//{ 1,0,1 },{ -1,0,1 },{ 1,0,-1 },{ -1,0,-1 },
+	//{ 0,1,1 },{ 0,-1,1 },{ 0,1,-1 },{ 0,-1,-1 } };
 
 	static int fastfloor(double x) {
 		return x>0 ? (int)x : (int)x - 1;
 	}
 
-	static double dot(int g[], double x, double y, double z) {
-		return g[0] * x + g[1] * y + g[2] * z;
-	}
+	//static double dot(int g[], double x, double y, double z) {
+	//	return g[0] * x + g[1] * y + g[2] * z;
+	//}
+
+	float grad(int32_t hash, float x, float y);
+	uint8_t hash(int32_t i);
 
 	int *p = new int[512];
 	const int permutation[256] = {151,160,137,91,90,15,
